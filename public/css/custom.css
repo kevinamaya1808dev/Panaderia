@@ -1,0 +1,246 @@
+/* Quitar márgenes/padding por defecto del documento */
+html, body{
+  margin: 0;
+  padding: 0;
+}
+
+/* === Paleta y tipografías (global) === */
+:root{
+  --font-title:'Pacifico',cursive;
+  --font-body:'Poppins',sans-serif;
+
+  --bakery-primary:#C47A2C;   /* caramelo/pan horneado */
+  --bakery-secondary:#F7E7CE; /* crema */
+  --bakery-accent:#8B5E34;    /* tostado */
+  --bakery-info:#E7B77A;      /* miel */
+  --bakery-dark:#2E2A27;      /* café oscuro */
+
+  --footer-icon:#FFD48A;      /* color de iconos footer */
+  --nav-height:88px;          /* altura navbar */
+}
+
+/* === Todo lo de abajo solo aplica al home === */
+.home-page{
+  font-family:var(--font-body);
+  color:var(--bakery-dark);
+  background:#fffdf9;
+  padding-top: var(--nav-height); /* ✅ para que no tape el carrusel */
+}
+
+/* Títulos */
+.home-page h1,.home-page h2,.home-page h3,.home-page h4,.home-page h5,.home-page h6,
+.home-page .navbar-brand,.home-page .card-header{
+  font-family:var(--font-title);
+  color:var(--bakery-primary);
+  letter-spacing:.5px;
+  font-size: 3rem;
+}
+
+/* Navbar fija */
+.home-page .navbar{
+  background:linear-gradient(180deg,#fffaf1 0%,#fff5e6 100%);
+  border-bottom:1px solid rgba(196,122,44,.15);
+}
+.navbar.fixed-top{
+  position: fixed;  /* ✅ clave */
+  top: 0; left: 0; right: 0;
+  z-index: 1100;
+  background: linear-gradient(180deg,#fffaf1 0%,#fff5e6 100%);
+  border-bottom: 1px solid rgba(196,122,44,.15);
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+.home-page .navbar .nav-link.active{
+  font-weight:600;
+  color:var(--bakery-primary)!important;
+}
+.home-page .navbar-brand{
+  font-size:2.5rem;
+  color: var(--bakery-primary);
+}
+
+/* Carrusel */
+.home-page .carousel .carousel-item img {
+  object-fit: cover;
+  height: clamp(500px, 90vh, 1000px); /* más alto */
+  filter: contrast(1.05) saturate(1.05);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+/* Cards */
+.home-page .card{
+  background:#fffdf9;
+  box-shadow:0 8px 24px rgba(139,94,52,.08);
+  border-radius:16px;
+}
+.home-page .card .card-body{ padding: 1.25rem 1.25rem 1.5rem; }
+.home-page .card-header{
+  color:var(--bakery-accent)!important;
+  border-color:var(--bakery-accent)!important;
+  background:rgba(231,183,122,.12);
+  font-size:1.2rem;
+}
+
+/* Franja CTA */
+.home-page .cta-strip{
+  background:linear-gradient(90deg,#fff0da,#ffe7c7);
+  border-top:1px solid rgba(196,122,44,.2);
+  border-bottom:1px solid rgba(196,122,44,.2);
+}
+.home-page .cta-strip h2{
+  font-size:2rem;
+  font-family:var(--font-title);
+}
+.home-page .cta-strip h2 span{
+  color:var(--bakery-primary);
+  font-family:var(--font-body);
+}
+
+/* Botones */
+.home-page .btn-primary{
+  background-color:var(--bakery-primary);
+  border-color:var(--bakery-primary);
+}
+.home-page .btn-primary:hover{
+  background-color:var(--bakery-accent);
+  border-color:var(--bakery-accent);
+}
+
+/* Footer */
+.home-page footer{ background:#1f1a17; }
+.home-page footer a:hover{ color:var(--bakery-info)!important; }
+.home-page .footer-social .btn{
+  border-color:rgba(255,255,255,.6);
+  color:var(--footer-icon)!important;
+}
+.home-page .footer-social .btn i{ font-size:1.3rem; }
+
+/* ===== Features zigzag ===== */
+.zigzag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  margin: 60px auto;
+  max-width: 1200px;
+  padding: 0 20px;
+}
+.zigzag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+.zigzag-item:nth-child(even) { flex-direction: row-reverse; }
+
+/* Texto */
+.zigzag-text {
+  flex: 1;
+  max-width: 500px;
+  background: #fffdf9;
+  padding: 30px 25px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(139,94,52,.1);
+  text-align: center;
+  border-left: 6px solid var(--bakery-primary);
+}
+.zigzag-text p {
+  font-size: 1.3rem;   /* tamaño de la letra */
+  line-height: 1.6;    /* espacio entre líneas para mejor lectura */
+  color: #444;         /* color del texto */
+  text-align: center; /* justificado si quieres */
+}
+.zigzag-item:nth-child(even) .zigzag-text {
+  border-left: none;
+  border-right: 6px solid var(--bakery-primary);
+}
+.zigzag-text h3 {
+  font-family: var(--font-title);
+  font-size: 3rem;
+  margin-bottom: 12px;
+  color: var(--bakery-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.zigzag-text h3 i { color: var(--bakery-accent); font-size: 1.5rem; }
+
+/* Imagen */
+.zigzag-img { flex: 1; max-width: 380px; }
+.zigzag-img img {
+  width: 100%;
+  max-height: 280px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+.zigzag-img img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 32px rgba(0,0,0,.25);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .zigzag-item { flex-direction: column !important; text-align: center; }
+  .zigzag-text { max-width: 100%; border: none; border-top: 6px solid var(--bakery-primary); }
+  .zigzag-img { max-width: 100%; }
+}
+/* 🔹 Contenedor de la historia */
+.story-section {
+  padding: 60px 20px;
+  background: var(--bakery-light, #fffaf2);
+}
+
+.story-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* 🔹 Texto */
+.story-text {
+  flex: 1 1 55%;
+  text-align: justify;
+}
+
+.story-title {
+  font-family: 'Pacifico', cursive;
+  color: var(--bakery-primary, #C47A2C);
+  margin-bottom: 20px;
+}
+
+.story-lead {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* 🔹 Imagen más pequeña */
+.story-media {
+  flex: 1 1 35%;
+  max-width: 350px;   /* 🔹 límite de tamaño */
+}
+
+.story-media img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;   /* mantiene proporción */
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .story-wrap {
+    flex-direction: column;
+    text-align: center;
+  }
+  .story-media {
+    max-width: 250px;
+  }
+}
