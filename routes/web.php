@@ -45,13 +45,14 @@ Route::get('/panel', [homeController::class, 'index'])
     ->name('panel');
 
 /* ============================================================
-|  RUTAS COMPARTIDAS (CAJERO + ADMINISTRADOR)
+|  RUTAS COMPARTIDAS (CAJERO + GERENTE + ADMINISTRADOR)
 ============================================================ */
 Route::group([
-    'middleware' => ['auth', 'role:cajero|administrador'],
+    'middleware' => ['auth', 'role:cajero|gerente|administrador'],
     'prefix'     => 'admin'
 ], function () {
     Route::resource('ventas', ventaController::class)->only(['index','create','store','show']);
+
     Route::resource('cajas', CajaController::class)->only(['index','create','store','destroy']);
     Route::resource('movimientos', MovimientoController::class)->only(['index','store']);
 
@@ -60,6 +61,9 @@ Route::group([
     Route::resource('kardex', KardexController::class)->only(['index']);
 
     Route::resource('clientes', clienteController::class)->only(['index','show']);
+
+    // 👇 Compras SOLO lectura para cajero/gerente/admin
+    Route::resource('compras', compraController::class)->only(['index','show']);
 
     Route::get('/export-pdf-comprobante-venta/{id}', [ExportPDFController::class, 'exportPdfComprobanteVenta'])
         ->name('export.pdf-comprobante-venta');
@@ -87,7 +91,9 @@ Route::group([
 
     Route::resource('productos', ProductoController::class)->except(['index','show','destroy']);
     Route::resource('proveedores', proveedorController::class)->except('show');
-    Route::resource('compras', compraController::class)->except(['edit','update','destroy']);
+
+    // 👇 Compras SOLO creación (sin index/show aquí)
+    Route::resource('compras', compraController::class)->only(['create','store']);
 
     Route::resource('inventario', InventarioControlller::class)->only(['create','store']);
 
@@ -99,8 +105,8 @@ Route::group([
 
     Route::post('/importar-excel-empleados', [ImportExcelController::class, 'importExcelEmpleados'])
         ->name('import.excel-empleados');
-    Route::resource('clientes', \App\Http\Controllers\clienteController::class)
-     ->only(['create','store','edit','update','destroy']);
+
+    Route::resource('clientes', clienteController::class)->only(['create','store','edit','update','destroy']);
 });
 
 /* ============================================================
@@ -109,9 +115,5 @@ Route::group([
 Route::middleware('auth')->get('/logout', [logoutController::class, 'logout'])->name('logout');
 
 // Login (público, solo para invitados)
-Route::get('/login', [loginController::class, 'index'])
-    ->middleware('guest')
-    ->name('login.index');
-Route::post('/login', [loginController::class, 'login'])
-    ->middleware('guest')
-    ->name('login.login');
+Route::get('/login', [loginController::class, 'index'])->middleware('guest')->name('login.index');
+Route::post('/login', [loginController::class, 'login'])->middleware('guest')->name('login.login');

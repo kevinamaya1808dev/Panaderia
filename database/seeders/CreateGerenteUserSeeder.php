@@ -72,7 +72,7 @@ class SetupRolesAndPermissionsSeeder extends Seeder
         $permisosGerente = [
             'ver-producto','ver-inventario','ver-kardex','ver-cliente',
             'ver-venta','crear-venta',
-            'ver-caja','aperturar-caja','ver-movimiento','cerrar-caja','ver-compra',
+            'ver-caja','aperturar-caja','ver-movimiento','cerrar-caja',
             // Si quieres que el gerente vea compras en solo lectura, descomenta:
             // 'ver-compra',
         ];

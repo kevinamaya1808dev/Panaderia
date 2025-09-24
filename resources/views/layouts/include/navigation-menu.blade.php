@@ -3,11 +3,22 @@
         <div class="sb-sidenav-menu">
             <div class="nav">
 
-                <x-nav.heading>Inicio</x-nav.heading>
+            <x-nav.heading>Inicio</x-nav.heading>
 
-                <x-nav.nav-link content='Panel'
-                    icon='fas fa-tachometer-alt'
-                    :href="route('panel')" />
+                @hasanyrole('administrador|gerente')
+            <x-nav.nav-link
+                content='Panel'
+                icon='fas fa-tachometer-alt'
+                :href="route('panel')" />
+            @endhasanyrole
+
+            @hasrole('cajero')
+                {{-- Acceso directo para cajero (opcional) --}}
+            <x-nav.nav-link
+                content='POS'
+                icon='fa-solid fa-cash-register'
+                :href="route('ventas.create')" />
+             @endhasrole
 
                 <x-nav.heading>Modulos</x-nav.heading>
 
