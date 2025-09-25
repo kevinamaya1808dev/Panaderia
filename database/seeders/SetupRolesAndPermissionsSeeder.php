@@ -23,7 +23,7 @@ class SetupRolesAndPermissionsSeeder extends Seeder
             'ver-marca','crear-marca','editar-marca','eliminar-marca',
             'ver-producto','crear-producto','editar-producto','eliminar-producto',
             'ver-inventario','crear-inventario', // (si tu controller lo usa)
-            'ver-kardex',
+            'ver-kardex', 
 
             'ver-cliente','crear-cliente','editar-cliente','eliminar-cliente',
             'ver-proveedore','crear-proveedore','editar-proveedore','eliminar-proveedore',
@@ -35,7 +35,7 @@ class SetupRolesAndPermissionsSeeder extends Seeder
             'ver-compra','crear-compra','mostrar-compra', // 'mostrar-compra' lo usas para botón "Ver"
 
             // Ventas / POS
-            'ver-venta','crear-venta', // si tienes 'mostrar-venta', agrégalo aquí
+            'ver-venta','crear-venta', 'abrir-pos', // si tienes 'mostrar-venta', agrégalo aquí
 
             // Otros (administración)
             'ver-empresa','editar-empresa',
@@ -65,6 +65,8 @@ class SetupRolesAndPermissionsSeeder extends Seeder
             'ver-venta','crear-venta',
             // Kardex
             'ver-kardex',
+            //Abrir.pos
+             'abrir-pos',
         ];
         $cajero->syncPermissions($permisosCajero);
 
@@ -72,7 +74,7 @@ class SetupRolesAndPermissionsSeeder extends Seeder
         $permisosGerente = [
             'ver-producto','ver-inventario','ver-kardex','ver-cliente',
             'ver-venta','crear-venta',
-            'ver-caja','aperturar-caja','ver-movimiento','cerrar-caja','ver-compra',
+            'ver-caja','aperturar-caja','ver-movimiento','cerrar-caja','ver-compra', 'abrir-pos',
             // Si quieres que el gerente vea compras en solo lectura, descomenta:
             // 'ver-compra',
         ];

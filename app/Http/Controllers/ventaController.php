@@ -24,47 +24,59 @@ class ventaController extends Controller
 {
     protected EmpresaService $empresaService;
 
-    function __construct(EmpresaService $empresaService)
+    public function __construct(EmpresaService $empresaService)
     {
+        // Listado
         $this->middleware('permission:ver-venta|crear-venta|mostrar-venta|eliminar-venta', ['only' => ['index']]);
+
+        // Crear/guardar
         $this->middleware('permission:crear-venta', ['only' => ['create', 'store']]);
+
+        // Ver detalle (si no tienes 'mostrar-venta', usa 'ver-venta' aquí)
         $this->middleware('permission:mostrar-venta', ['only' => ['show']]);
-        //$this->middleware('permission:eliminar-venta', ['only' => ['destroy']]);
-        $this->middleware('check-caja-aperturada-user', ['only' => ['create', 'store']]);
-        $this->middleware('check-show-venta-user', ['only' => ['show']]);
+
+        // Caja aperturada para flujos de venta y POS
+        $this->middleware('check-caja-aperturada-user')->only(['create', 'store', 'pos']);
+
+        // POS con permiso dedicado
+        $this->middleware('permission:abrir-pos')->only(['pos']);
+
+        // Ver detalle propio
+        $this->middleware('check-show-venta-user')->only(['show']);
+
         $this->empresaService = $empresaService;
     }
+
     /**
-     * Display a listing of the resource.
+     * Listado de ventas
      */
+    public function index(): View
+    {
+        $query = Venta::with([
+            'comprobante',
+            'cliente.persona.documento',
+            'user',
+        ]);
 
-public function index(): View
-{
-    $query = Venta::with([
-        'comprobante',
-        'cliente.persona.documento',
-        'user',
-    ]);
+        // Si NO es admin, filtrar por usuario autenticado
+        if (!auth()->user()->hasRole('administrador')) {
+            $query->where('user_id', Auth::id());
+        }
 
-    // Si NO es administrador, limitar por usuario autenticado
-    if (!auth()->user()->hasRole('administrador')) {
-        $query->where('user_id', Auth::id());
+        $ventas = $query->latest()->paginate(10);
+
+        return view('venta.index', compact('ventas'));
     }
 
-    $ventas = $query->latest()->paginate(10);
-
-    return view('venta.index', compact('ventas'));
-}
-
     /**
-     * Show the form for creating a new resource.
+     * POS: pantalla de venta sin exigir 'crear-venta'
      */
-    public function create(ComprobanteService $comprobanteService): View
+    public function pos(ComprobanteService $comprobanteService): View
     {
-
+        // Reutilizamos exactamente la misma data que create()
         $productos = Producto::join('inventario as i', function ($join) {
-            $join->on('i.producto_id', '=', 'productos.id');
-        })
+                $join->on('i.producto_id', '=', 'productos.id');
+            })
             ->join('presentaciones as p', function ($join) {
                 $join->on('p.id', '=', 'productos.presentacione_id');
             })
@@ -83,9 +95,10 @@ public function index(): View
         $clientes = Cliente::whereHas('persona', function ($query) {
             $query->where('estado', 1);
         })->get();
-        $comprobantes = $comprobanteService->obtenerComprobantes();
+
+        $comprobantes      = $comprobanteService->obtenerComprobantes();
         $optionsMetodoPago = MetodoPagoEnum::cases();
-        $empresa = $this->empresaService->obtenerEmpresa();
+        $empresa           = $this->empresaService->obtenerEmpresa();
 
         return view('venta.create', compact(
             'productos',
@@ -97,34 +110,71 @@ public function index(): View
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Form de crear venta (flujo clásico)
+     */
+    public function create(ComprobanteService $comprobanteService): View
+    {
+        $productos = Producto::join('inventario as i', function ($join) {
+                $join->on('i.producto_id', '=', 'productos.id');
+            })
+            ->join('presentaciones as p', function ($join) {
+                $join->on('p.id', '=', 'productos.presentacione_id');
+            })
+            ->select(
+                'p.sigla',
+                'productos.nombre',
+                'productos.codigo',
+                'productos.id',
+                'i.cantidad',
+                'productos.precio'
+            )
+            ->where('productos.estado', 1)
+            ->where('i.cantidad', '>', 0)
+            ->get();
+
+        $clientes = Cliente::whereHas('persona', function ($query) {
+            $query->where('estado', 1);
+        })->get();
+
+        $comprobantes      = $comprobanteService->obtenerComprobantes();
+        $optionsMetodoPago = MetodoPagoEnum::cases();
+        $empresa           = $this->empresaService->obtenerEmpresa();
+
+        return view('venta.create', compact(
+            'productos',
+            'clientes',
+            'comprobantes',
+            'optionsMetodoPago',
+            'empresa'
+        ));
+    }
+
+    /**
+     * Guardar venta
      */
     public function store(StoreVentaRequest $request): RedirectResponse
     {
         DB::beginTransaction();
         try {
-            //Llenar mi tabla venta
             $venta = Venta::create($request->validated());
 
-            //Llenar mi tabla venta_producto
-            //1. Recuperar los arrays
+            // Arrays del detalle
             $arrayProducto_id = $request->get('arrayidproducto');
-            $arrayCantidad = $request->get('arraycantidad');
+            $arrayCantidad    = $request->get('arraycantidad');
             $arrayPrecioVenta = $request->get('arrayprecioventa');
 
-            //2.Realizar el llenado
-            $siseArray = count($arrayProducto_id);
+            $sizeArray = count($arrayProducto_id);
             $cont = 0;
 
-            while ($cont < $siseArray) {
+            while ($cont < $sizeArray) {
                 $venta->productos()->syncWithoutDetaching([
                     $arrayProducto_id[$cont] => [
-                        'cantidad' => $arrayCantidad[$cont],
+                        'cantidad'     => $arrayCantidad[$cont],
                         'precio_venta' => $arrayPrecioVenta[$cont],
                     ]
                 ]);
 
-                //Despachar evento
+                // Evento por cada item
                 CreateVentaDetalleEvent::dispatch(
                     $venta,
                     $arrayProducto_id[$cont],
@@ -135,12 +185,14 @@ public function index(): View
                 $cont++;
             }
 
-            //Despachar evento
+            // Evento general
             CreateVentaEvent::dispatch($venta);
 
             DB::commit();
             ActivityLogService::log('Creación de una venta', 'Ventas', $request->validated());
-            return redirect()->route('movimientos.index', ['caja_id' => $venta->caja_id])
+
+            return redirect()
+                ->route('movimientos.index', ['caja_id' => $venta->caja_id])
                 ->with('success', 'Venta registrada');
         } catch (Throwable $e) {
             DB::rollBack();
@@ -150,7 +202,7 @@ public function index(): View
     }
 
     /**
-     * Display the specified resource.
+     * Ver detalle
      */
     public function show(Venta $venta): View
     {
@@ -158,32 +210,7 @@ public function index(): View
         return view('venta.show', compact('venta', 'empresa'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        /* Venta::where('id', $id)
-            ->update([
-                'estado' => 0
-            ]);
-
-        return redirect()->route('ventas.index')->with('success', 'Venta eliminada');*/
-    }
+    public function edit(string $id) { /* ... */ }
+    public function update(Request $request, string $id) { /* ... */ }
+    public function destroy(string $id) { /* ... */ }
 }

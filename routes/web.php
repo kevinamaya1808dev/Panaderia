@@ -52,7 +52,11 @@ Route::group([
     'prefix'     => 'admin'
 ], function () {
     Route::resource('ventas', ventaController::class)->only(['index','create','store','show']);
-
+    
+      Route::get('pos', [ventaController::class, 'pos'])
+    ->name('pos')
+    ->middleware('permission:abrir-pos');
+    
     Route::resource('cajas', CajaController::class)->only(['index','create','store','destroy']);
     Route::resource('movimientos', MovimientoController::class)->only(['index','store']);
 
