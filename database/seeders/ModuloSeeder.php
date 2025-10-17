@@ -1,6 +1,4 @@
-// database/seeders/ModuloSeeder.php
 <?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;

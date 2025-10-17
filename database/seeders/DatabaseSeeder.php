@@ -1,7 +1,6 @@
-// database/seeders/DatabaseSeeder.php
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders; // Esta debe ser la primera línea de código después de <?php
 
 use Illuminate\Database\Seeder;
 
@@ -19,9 +18,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class, 
 
             // 3. Datos de catálogo
-            CategoriaSeeder::class,
-            // ProveedorSeeder::class,
-            // ClienteSeeder::class,
+            // CategoriaSeeder::class, // Asegúrate de tener este Seeder
+            // ProveedorSeeder::class, // Asegúrate de tener este Seeder
+            // ClienteSeeder::class, // Asegúrate de tener este Seeder
         ]);
     }
 }

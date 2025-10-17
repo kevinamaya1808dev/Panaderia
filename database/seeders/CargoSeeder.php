@@ -1,4 +1,3 @@
-// database/seeders/CargoSeeder.php
 <?php
 
 namespace Database\Seeders;

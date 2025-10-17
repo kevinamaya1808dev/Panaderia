@@ -1,4 +1,3 @@
-// database/seeders/UserSeeder.php
 <?php
 
 namespace Database\Seeders;
@@ -17,8 +16,9 @@ class UserSeeder extends Seeder
         DB::table('users')->insert([
             'name' => 'Super Administrador',
             'email' => 'admin@panaderia.com',
-            'password' => Hash::make('password'), // Utiliza una contraseña segura en producción
-            'id_cargo_fk' => $superAdminCargoId, // Asigna el Cargo ID 1 (Super Admin)
+            'password' => Hash::make('password'),
+            // CORRECCIÓN AQUÍ: Usar 'cargo_id'
+            'cargo_id' => $superAdminCargoId, 
             'created_at' => now(),
             'updated_at' => now(),
         ]);
