@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\AuthController; // NUEVA IMPORTACIÓN
+use App\Http\Controllers\AuthController; 
+use App\Http\Controllers\CargoController; // AGREGADO
+use App\Http\Controllers\PermisoController; // AGREGADO
 
 /*
 |--------------------------------------------------------------------------
@@ -43,14 +45,27 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // 4. MÓDULOS DE RECURSOS (Aquí aplicarías los Gates de permiso)
-    // Ejemplo de cómo se vería al aplicar un Gate, aunque lo haremos después:
-    // Route::resource('empleados', EmpleadoController::class)->middleware('can:ver-empleados');
     Route::resource('empleados', EmpleadoController::class);
     Route::resource('clientes', ClienteController::class);
+    
+    // ==========================================================
+    // INICIO: RUTAS DE GESTIÓN DE ROLES Y PERMISOS (RBAC)
+    // ==========================================================
+
+    // CRUD completo para Cargos (Roles)
+    Route::resource('cargos', CargoController::class);
+    
+    // Rutas específicas para la MATRIZ de Permisos (vinculadas a un Cargo)
+    // Muestra la matriz de permisos
+    Route::get('cargos/{cargo}/permisos', [PermisoController::class, 'index'])->name('cargos.permisos.index');
+    
+    // Guarda/Actualiza los cambios en la matriz
+    Route::put('cargos/{cargo}/permisos', [PermisoController::class, 'update'])->name('cargos.permisos.update');
+    
+    // ==========================================================
+    // FIN: RUTAS DE GESTIÓN DE ROLES Y PERMISOS (RBAC)
+    // ==========================================================
     
     // AÑADE AQUÍ EL RESTO DE TUS CONTROLADORES (Productos, Ventas, Cajas, etc.)
 
 });
-
-// IMPORTANTE: Eliminamos la línea require __DIR__.'/auth.php';
-// Ya no necesitamos el archivo de rutas de autenticación predefinido.

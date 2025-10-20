@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\Cargo;
+use App\Models\Empleado;
 use Illuminate\Http\Request;
-use App\Models\Empleado; // Importa el modelo de Empleado
-use App\Models\User; // Importa el modelo de User
-use Illuminate\Support\Facades\Hash; // Para encriptar la contraseña
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class EmpleadoController extends Controller
 {
     /**
-     * Muestra una lista de todos los empleados.
+     * Muestra una lista de todos los empleados y sus cargos.
      */
     public function index()
     {
-        $empleados = Empleado::with('user')->get();
-        return view('empleados.index', compact('empleados'));
+        $users = User::with(['cargo', 'empleado'])->get();
+        return view('empleados.index', compact('users'));
     }
 
     /**
@@ -23,90 +27,143 @@ class EmpleadoController extends Controller
      */
     public function create()
     {
-        return view('empleados.create');
+        $cargos = Cargo::all();
+        return view('empleados.create', compact('cargos'));
     }
 
     /**
-     * Almacena un nuevo empleado en la base de datos.
+     * Almacena un nuevo empleado y usuario en la base de datos.
      */
     public function store(Request $request)
     {
-        // 1. Validar los datos del formulario (esto previene errores y valida el correo y la contraseña)
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'telefono' => 'nullable|string|max:20',
+            'password' => 'required|string|min:8|confirmed',
+            'cargo_id' => 'required|exists:cargos,id',
+            'telefono' => 'nullable|string|max:255',
             'direccion' => 'nullable|string|max:255',
         ]);
 
-        // 2. Crear el usuario en la tabla 'users'
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password), // Encripta la contraseña
-        ]);
+        DB::beginTransaction();
 
-        // 3. Crear el empleado en la tabla 'empleados' y lo vincula al usuario
-        $empleado = new Empleado([
-            'telefono' => $request->telefono,
-            'direccion' => $request->direccion,
-        ]);
+        try {
+            // 1. Crear el registro en la tabla 'users'
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'cargo_id' => $request->cargo_id,
+            ]);
 
-        // El método 'save()' crea la relación y guarda el empleado
-        $user->empleado()->save($empleado);
+            // 2. Crear el registro en la tabla 'empleados' usando el ID del usuario recién creado
+            Empleado::create([
+                'idUserFK' => $user->id, // ESTO AHORA FUNCIONA GRACIAS A LA CORRECCIÓN EN EL MODELO EMPLEADO
+                'telefono' => $request->telefono,
+                'direccion' => $request->direccion,
+            ]);
 
-        return redirect()->route('empleados.index')->with('success', '¡Empleado creado con éxito!');
-    
+            DB::commit();
+
+            return redirect()->route('empleados.index')->with('success', 'Empleado creado exitosamente y usuario activado.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Retornar un error detallado para el debugging
+            return redirect()->back()->withInput()->with('error', 'Ocurrió un error al crear el empleado: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Muestra los detalles de un empleado específico.
+     * Muestra los datos de un empleado específico.
      */
-    public function show(Empleado $empleado)
+    public function show(User $empleado)
     {
+        $empleado->load('cargo', 'empleado');
         return view('empleados.show', compact('empleado'));
     }
 
     /**
      * Muestra el formulario para editar un empleado.
      */
-    public function edit(Empleado $empleado)
+    public function edit(User $empleado)
     {
-        return view('empleados.edit', compact('empleado'));
+        $cargos = Cargo::all();
+        $empleado->load('empleado');
+        return view('empleados.edit', compact('empleado', 'cargos'));
     }
 
     /**
      * Actualiza un empleado en la base de datos.
      */
-    public function update(Request $request, Empleado $empleado)
+    public function update(Request $request, User $empleado)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $empleado->user->id,
-            'telefono' => 'nullable|string|max:20',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($empleado->id)],
+            'password' => 'nullable|string|min:8|confirmed',
+            'cargo_id' => 'required|exists:cargos,id',
+            'telefono' => 'nullable|string|max:255',
             'direccion' => 'nullable|string|max:255',
         ]);
 
-        $empleado->user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-        ]);
+        DB::beginTransaction();
 
-        $empleado->update([
-            'telefono' => $request->telefono,
-            'direccion' => $request->direccion,
-        ]);
+        try {
+            $userData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'cargo_id' => $request->cargo_id,
+            ];
 
-        return redirect()->route('empleados.index')->with('success', '¡Empleado actualizado con éxito!');
+            if ($request->filled('password')) {
+                $userData['password'] = Hash::make($request->password);
+            }
+
+            $empleado->update($userData);
+
+            // Asegurar que el registro de empleado exista antes de actualizarlo
+            if ($empleado->empleado) {
+                 $empleado->empleado->update([
+                    'telefono' => $request->telefono,
+                    'direccion' => $request->direccion,
+                ]);
+            }
+           
+
+            DB::commit();
+
+            return redirect()->route('empleados.index')->with('success', 'Empleado actualizado exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', 'Ocurrió un error al actualizar el empleado.');
+        }
     }
 
     /**
-     * Elimina un empleado de la base de datos.
+     * Elimina un empleado y su usuario asociado.
      */
-    public function destroy(Empleado $empleado)
+    public function destroy(User $empleado)
     {
-        $empleado->user->delete(); // Elimina el usuario, lo que también elimina el empleado por la relación 'cascade'
-        return redirect()->route('empleados.index')->with('success', '¡Empleado eliminado con éxito!');
+        if (Auth::id() === $empleado->id) {
+            return redirect()->route('empleados.index')->with('error', 'No puedes eliminar tu propia cuenta mientras estás logueado.');
+        }
+
+        if ($empleado->id === 1) {
+            return redirect()->route('empleados.index')->with('error', 'El Super Administrador no puede ser eliminado.');
+        }
+        
+        DB::beginTransaction();
+        try {
+            $empleado->delete(); // Gracias a ON DELETE CASCADE en la BD, Empleado se borra automáticamente
+            DB::commit();
+
+            return redirect()->route('empleados.index')->with('success', 'Empleado y usuario eliminados exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('empleados.index')->with('error', 'Ocurrió un error al eliminar el empleado.');
+        }
     }
 }

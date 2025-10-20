@@ -3,45 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model; // Importar solo Model, ya no Authenticatable
 
-class Empleado extends Authenticatable
+class Empleado extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
 
     protected $table = 'empleados'; 
+    protected $primaryKey = 'idEmp'; // Especificar la clave primaria correcta
 
     protected $fillable = [
-        'Nombre',
-        'Correo',
-        'Password',
-        'idCargoFK'
+        'idUserFK', // CRÍTICO: Asegurarse de que esta clave foránea esté aquí
+        'telefono',
+        'direccion',
     ];
     
-    protected $hidden = [
-        'Password',
-    ];
-    
-    // CRÍTICO: Fortify o la autenticación usa esta función si el campo no es 'password'
-    public function getAuthPassword()
+    // Opcional: Define la relación inversa con User
+    public function user()
     {
-        return $this->Password;
-    }
-
-    public function setPasswordAttribute($value)
-    {
-        $this->attributes['Password'] = bcrypt($value);
-    }
-    
-    public function cargo()
-    {
-        return $this->belongsTo(Cargo::class, 'idCargoFK');
-    }
-    
-    // Relación para el AuthServiceProvider
-    public function permisos()
-    {
-        return $this->belongsToMany(Permiso::class, 'cargo_permiso', 'id_cargo', 'id_permiso');
+        // El empleado pertenece a un usuario (relación 1:1)
+        return $this->belongsTo(User::class, 'idUserFK');
     }
 }

@@ -1,58 +1,76 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Gestión de Empleados') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold">Lista de Empleados</h3>
-                        <a href="{{ route('empleados.create') }}" class="ml-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                            Crear Nuevo Empleado
-                        </a>
-                    </div>
-
-                    @if (session('success'))
-                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                            <span class="block sm:inline">{{ session('success') }}</span>
-                        </div>
-                    @endif
-
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo Electrónico</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Direcciones</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($empleados as $empleado)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $empleado->user->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $empleado->user->email }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $empleado->telefono ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $empleado->direccion }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('empleados.edit', $empleado->idEmp) }}" class="text-indigo-600 hover:text-indigo-900">Editar</a>
-                                        <form action="{{ route('empleados.destroy', $empleado->idEmp) }}" method="POST" class="inline-block ml-2" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este empleado?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+@section('content')
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Empleados</h2>
+        <a href="{{ route('empleados.create') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Crear Nuevo Empleado
+        </a>
     </div>
-</x-app-layout>
+
+    {{-- Manejo de Mensajes de Sesión (Éxito/Error) --}}
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Cargo</th>
+                    <th>Teléfono</th>
+                    <th style="width: 250px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($users as $user)
+                <tr>
+                    <td>{{ $user->id }}</td>
+                    <td>{{ $user->name }}</td>
+                    <td>{{ $user->email }}</td>
+                    <td>
+                        {{-- Muestra el nombre del cargo si existe --}}
+                        {{ $user->cargo ? $user->cargo->nombre : 'Sin Cargo' }}
+                    </td>
+                    <td>
+                        {{-- Muestra el teléfono del empleado si existe el registro relacionado --}}
+                        {{ $user->empleado ? $user->empleado->telefono : 'N/A' }}
+                    </td>
+                    <td>
+                        {{-- Enlace para ver detalles (si tienes una vista show.blade.php) --}}
+                        {{-- <a href="{{ route('empleados.show', $user->id) }}" class="btn btn-sm btn-info me-1" title="Ver Detalle">
+                            <i class="fas fa-eye"></i>
+                        </a> --}}
+                        <a href="{{ route('empleados.edit', $user->id) }}" class="btn btn-sm btn-warning me-1" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        
+                        {{-- Protección: No permitir eliminar al Super Administrador (ID 1) ni al usuario actual --}}
+                        @if ($user->id !== 1 && $user->id !== Auth::id())
+                            <form action="{{ route('empleados.destroy', $user->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a {{ $user->name }}? Esta acción es irreversible.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection

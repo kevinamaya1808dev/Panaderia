@@ -1,57 +1,82 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Crear Nuevo Empleado') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <form action="{{ route('empleados.store') }}" method="POST">
-                        @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Campo para el nombre del usuario --}}
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                <input type="text" name="name" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-                            {{-- Campo para el correo electrónico del usuario --}}
-                            <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-                                <input type="email" name="email" id="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-                            {{-- Campo para la contraseña del usuario --}}
-                            <div>
-                                <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-                                <input type="password" name="password" id="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                @error('password') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-                            {{-- Campos para la información del empleado --}}
-                            <div>
-                                <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
-                                <input type="text" name="telefono" id="telefono" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                            </div>
-                            <div class="col-span-1 md:col-span-2">
-                                <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección</label>
-                                <textarea name="direccion" id="direccion" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></textarea>
-                            </div>
-                        </div>
+@section('content')
+<div class="container">
+    <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Crear Nuevo Empleado</h3>
+        </div>
+        <div class="card-body">
 
-                        <div class="mt-6">
-                            <button type="submit" class="ml-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                Guardar Empleado
-                            </button>
-                            <a href="{{ route('empleados.index') }}" class="ml-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                Cancelar
-                            </a>
-                        </div>
-                    </form>
+            {{-- Manejo de Errores de Sesión (si hay rollback) --}}
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+            <form action="{{ route('empleados.store') }}" method="POST">
+                @csrf
+
+                {{-- Sección de Datos de Usuario (users table) --}}
+                <h5 class="mt-3 mb-3 text-primary">Datos de Acceso</h5>
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nombre Completo</label>
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
+                    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-            </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required>
+                    @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                
+                <div class="mb-3">
+                    <label for="cargo_id" class="form-label">Cargo (Rol)</label>
+                    <select class="form-select @error('cargo_id') is-invalid @enderror" id="cargo_id" name="cargo_id" required>
+                        <option value="">Seleccione un Cargo</option>
+                        {{-- La variable $cargos debe ser pasada desde el EmpleadoController@create --}}
+                        @foreach ($cargos as $cargo)
+                            <option value="{{ $cargo->id }}" {{ old('cargo_id') == $cargo->id ? 'selected' : '' }}>
+                                {{ $cargo->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('cargo_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
+                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password_confirmation" class="form-label">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
+                </div>
+                
+                {{-- Sección de Datos de Empleado (empleados table) --}}
+                <h5 class="mt-4 mb-3 text-primary">Información Adicional</h5>
+
+                <div class="mb-3">
+                    <label for="telefono" class="form-label">Teléfono</label>
+                    <input type="text" class="form-control @error('telefono') is-invalid @enderror" id="telefono" name="telefono" value="{{ old('telefono') }}">
+                    @error('telefono') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                
+                <div class="mb-3">
+                    <label for="direccion" class="form-label">Dirección</label>
+                    <input type="text" class="form-control @error('direccion') is-invalid @enderror" id="direccion" name="direccion" value="{{ old('direccion') }}">
+                    @error('direccion') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ route('empleados.index') }}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success">Guardar Empleado</button>
+                </div>
+            </form>
         </div>
     </div>
-</x-app-layout>
+</div>
+@endsection
